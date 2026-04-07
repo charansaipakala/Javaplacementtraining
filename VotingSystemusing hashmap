@@ -1,0 +1,48 @@
+import java.util.*;
+
+public class VotingSystem {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        HashMap<String, Integer> votes = new HashMap<>();
+
+        while (true) {
+            System.out.println("1.Vote");
+            System.out.println("2.Show Results");
+            System.out.println("3.Find Winner");
+            System.out.println("4.Exit");
+
+            int choice = sc.nextInt();
+
+            if (choice == 1) {
+                String candidate = sc.next();
+                votes.put(candidate, votes.getOrDefault(candidate, 0) + 1);
+                System.out.println("Vote Added");
+            } 
+            else if (choice == 2) {
+                for (String key : votes.keySet()) {
+                    System.out.println(key + " : " + votes.get(key));
+                }
+            } 
+            else if (choice == 3) {
+                String winner = "";
+                int maxVotes = 0;
+
+                for (String key : votes.keySet()) {
+                    if (votes.get(key) > maxVotes) {
+                        maxVotes = votes.get(key);
+                        winner = key;
+                    }
+                }
+
+                if (winner.equals("")) {
+                    System.out.println("No votes yet");
+                } else {
+                    System.out.println("Winner: " + winner + " with " + maxVotes + " votes");
+                }
+            } 
+            else if (choice == 4) {
+                break;
+            }
+        }
+    }
+}
