@@ -1,0 +1,74 @@
+import java.util.*;
+
+class Loan {
+    int loanId;
+    String customerName;
+    double amount;
+    double interestRate;
+    int years;
+
+    Loan(int loanId, String customerName, double amount, double interestRate, int years) {
+        this.loanId = loanId;
+        this.customerName = customerName;
+        this.amount = amount;
+        this.interestRate = interestRate;
+        this.years = years;
+    }
+
+    double calculateEMI() {
+        double r = interestRate / (12 * 100);
+        int n = years * 12;
+        return (amount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    }
+}
+
+public class LoanManagementSystem {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        ArrayList<Loan> loans = new ArrayList<>();
+
+        while (true) {
+            System.out.println("1.Add Loan");
+            System.out.println("2.View Loans");
+            System.out.println("3.Calculate EMI");
+            System.out.println("4.Exit");
+
+            int choice = sc.nextInt();
+
+            if (choice == 1) {
+                int id = sc.nextInt();
+                String name = sc.next();
+                double amount = sc.nextDouble();
+                double rate = sc.nextDouble();
+                int years = sc.nextInt();
+
+                loans.add(new Loan(id, name, amount, rate, years));
+                System.out.println("Loan Added");
+            } 
+            else if (choice == 2) {
+                for (Loan l : loans) {
+                    System.out.println(l.loanId + " " + l.customerName + " " + l.amount);
+                }
+            } 
+            else if (choice == 3) {
+                int id = sc.nextInt();
+                boolean found = false;
+
+                for (Loan l : loans) {
+                    if (l.loanId == id) {
+                        System.out.println("EMI: " + l.calculateEMI());
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    System.out.println("Loan Not Found");
+                }
+            } 
+            else if (choice == 4) {
+                break;
+            }
+        }
+    }
+}
