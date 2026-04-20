@@ -1,0 +1,124 @@
+import java.util.*;
+import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+public class AttendanceSystem {
+    private Map<LocalDate, Map<String, Boolean>> attendanceData = new HashMap<>();
+    private Set<String> studentList = new TreeSet<>();
+    private final String FILE_NAME = "attendance_records.txt";
+    private final Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        new AttendanceSystem().run();
+    }
+
+    public void run() {
+        loadData();
+        while (true) {
+            System.out.println("\n--- Attendance Tracker ---");
+            System.out.println("1. Mark Attendance\n2. View Student Report\n3. Monthly Summary\n4. Save & Exit");
+            System.out.print("Choice: ");
+            String choice = sc.nextLine();
+
+            switch (choice) {
+                case "1" -> markAttendance();
+                case "2" -> viewStudentReport();
+                case "3" -> viewMonthlySummary();
+                case "4" -> { saveData(); return; }
+                default -> System.out.println("Invalid choice.");
+            }
+        }
+    }
+
+    private void markAttendance() {
+        System.out.print("Enter Date (YYYY-MM-DD) or hit Enter for today: ");
+        String dateInput = sc.nextLine();
+        LocalDate date = dateInput.isEmpty() ? LocalDate.now() : LocalDate.parse(dateInput);
+
+        Map<String, Boolean> dailyMap = attendanceData.computeIfAbsent(date, k -> new HashMap<>());
+
+        System.out.println("Enter student names (type 'done' to finish):");
+        while (true) {
+            System.out.print("Student Name: ");
+            String name = sc.nextLine().trim();
+            if (name.equalsIgnoreCase("done")) break;
+
+            System.out.print("Status (P for Present / A for Absent): ");
+            boolean isPresent = sc.nextLine().equalsIgnoreCase("P");
+            
+            dailyMap.put(name, isPresent);
+            studentList.add(name);
+        }
+    }
+
+    private void viewStudentReport() {
+        System.out.print("Enter Student Name: ");
+        String name = sc.nextLine().trim();
+        if (!studentList.contains(name)) {
+            System.out.println("Student not found.");
+            return;
+        }
+
+        long presentDays = 0;
+        long totalDays = 0;
+
+        for (Map<String, Boolean> day : attendanceData.values()) {
+            if (day.containsKey(name)) {
+                totalDays++;
+                if (day.get(name)) presentDays++;
+            }
+        }
+
+        double percentage = (totalDays == 0) ? 0 : ((double) presentDays / totalDays) * 100;
+        System.out.printf("Report for %s: %d/%d days present (%.2f%%)%n", name, presentDays, totalDays, percentage);
+    }
+
+    private void viewMonthlySummary() {
+        System.out.print("Enter Month (1-12): ");
+        int month = Integer.parseInt(sc.nextLine());
+        System.out.print("Enter Year: ");
+        int year = Integer.parseInt(sc.nextLine());
+
+        System.out.println("\n--- Monthly Summary (" + month + "/" + year + ") ---");
+        for (String student : studentList) {
+            long count = attendanceData.entrySet().stream()
+                .filter(e -> e.getKey().getMonthValue() == month && e.getKey().getYear() == year)
+                .filter(e -> e.getValue().getOrDefault(student, false))
+                .count();
+            System.out.println(student + ": " + count + " days present");
+        }
+    }
+
+    private void saveData() {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(FILE_NAME))) {
+            for (var entry : attendanceData.entrySet()) {
+                for (var record : entry.getValue().entrySet()) {
+                    writer.println(entry.getKey() + "," + record.getKey() + "," + record.getValue());
+                }
+            }
+            System.out.println("Data saved to " + FILE_NAME);
+        } catch (IOException e) {
+            System.out.println("Error saving data.");
+        }
+    }
+
+    private void loadData() {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) return;
+        try (Scanner fileScanner = new Scanner(file)) {
+            while (fileScanner.hasNextLine()) {
+                String[] parts = fileScanner.nextLine().split(",");
+                if (parts.length == 3) {
+                    LocalDate date = LocalDate.parse(parts[0]);
+                    String name = parts[1];
+                    boolean present = Boolean.parseBoolean(parts[2]);
+                    attendanceData.computeIfAbsent(date, k -> new HashMap<>()).put(name, present);
+                    studentList.add(name);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error loading previous records.");
+        }
+    }
+}
