@@ -1,0 +1,43 @@
+#include<stdio.h>
+int main(){
+	while(true){
+			char destination[50];
+			char source[50];
+			int t;
+			int fair=45;
+		printf("\n---------MENU-----------\n1.View stations\n2.Book ticket\n3.Show ticket details\n4.Exit\n");
+		printf("CHOOSE your OPTION :");
+		int n;
+		scanf("%d",&n);
+		if(n==1){
+			char stations[6][50]={"chennai","tiruvallur","tiruttani","puttur","renigunta","tirupati"};
+			printf("Stations are");
+			for(int i=0;i<sizeof(stations)/sizeof(stations[0]);i++){
+				printf(stations[i]);
+				printf("\n");
+			}
+		}
+		else if(n==2){
+			printf("Enter the source : ");
+			scanf("%s",&source);
+			printf("Enter the destination : ");
+			scanf("%s",&destination);
+			printf("Enter no.of tickets :");
+			scanf("%d",&t);
+			printf("calculating fair.....");
+			fair=fair*t;
+			printf("Total amount : %d",fair);		
+		}
+		else if(n==3){
+			printf("-----TICKET DETAILS------");
+			printf("TRIP : %s ---> %s",&source,&destination);
+			printf("FARE AMOUNT : %d\n",fair);
+		}
+		else if(n==4){
+			break;
+		}
+		else{
+			printf("Choose valid option");
+		}
+	}
+}
