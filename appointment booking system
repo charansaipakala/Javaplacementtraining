@@ -1,0 +1,139 @@
+import java.util.*;
+import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+class Appointment implements Serializable {
+    private String clientName;
+    private LocalDateTime timeSlot;
+    private String service;
+
+    public Appointment(String clientName, LocalDateTime timeSlot, String service) {
+        this.clientName = clientName;
+        this.timeSlot = timeSlot;
+        this.service = service;
+    }
+
+    public LocalDateTime getTimeSlot() { return timeSlot; }
+
+    @Override
+    public String toString() {
+        DateTimeFormatter displayFormat = DateTimeFormatter.ofPattern("MMM dd, yyyy @ hh:mm a");
+        return String.format("[%s] Client: %-15s | Service: %s", 
+                             timeSlot.format(displayFormat), clientName, service);
+    }
+}
+
+public class BookingManager {
+    private Map<LocalDateTime, Appointment> schedule = new TreeMap<>();
+    private final String DATABASE = "appointments.dat";
+    private final Scanner input = new Scanner(System.in);
+    private final DateTimeFormatter timeParser = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    public static void main(String[] args) {
+        new BookingManager().start();
+    }
+
+    public void start() {
+        loadData();
+        System.out.println("Appointment System Initialized");
+
+        while (true) {
+            System.out.println("\n1. New Booking | 2. Cancel | 3. Check Slot | 4. View Schedule | 5. Save & Exit");
+            System.out.print("Action > ");
+            String choice = input.nextLine();
+
+            switch (choice) {
+                case "1" -> createBooking();
+                case "2" -> cancelBooking();
+                case "3" -> checkAvailability();
+                case "4" -> showSchedule();
+                case "5" -> { saveAndExit(); return; }
+                default -> System.out.println("Invalid option, please try again.");
+            }
+        }
+    }
+
+    private void createBooking() {
+        System.out.print("Enter Date & Time (YYYY-MM-DD HH:mm): ");
+        String dateTimeStr = input.nextLine();
+
+        try {
+            LocalDateTime requestedTime = LocalDateTime.parse(dateTimeStr, timeParser);
+
+            if (schedule.containsKey(requestedTime)) {
+                System.out.println("Conflict: This slot is already taken by " + 
+                                   schedule.get(requestedTime).toString());
+                return;
+            }
+
+            System.out.print("Client Name: ");
+            String name = input.nextLine();
+            System.out.print("Service Type: ");
+            String service = input.nextLine();
+
+            schedule.put(requestedTime, new Appointment(name, requestedTime, service));
+            System.out.println("Appointment successfully booked.");
+
+        } catch (Exception e) {
+            System.out.println("Format Error: Use '2026-05-20 14:30' (Year-Month-Day Hour:Minute)");
+        }
+    }
+
+    private void cancelBooking() {
+        System.out.print("Enter the exact Date/Time to cancel (YYYY-MM-DD HH:mm): ");
+        try {
+            LocalDateTime time = LocalDateTime.parse(input.nextLine(), timeParser);
+            if (schedule.remove(time) != null) {
+                System.out.println("Appointment removed from the system.");
+            } else {
+                System.out.println("No appointment found at that specific time.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Check your date format.");
+        }
+    }
+
+    private void checkAvailability() {
+        System.out.print("Check Slot (YYYY-MM-DD HH:mm): ");
+        try {
+            LocalDateTime time = LocalDateTime.parse(input.nextLine(), timeParser);
+            if (schedule.containsKey(time)) {
+                System.out.println("Slot is Busy.");
+            } else {
+                System.out.println("Slot is Available.");
+            }
+        } catch (Exception e) {
+            System.out.println("Format Error.");
+        }
+    }
+
+    private void showSchedule() {
+        if (schedule.isEmpty()) {
+            System.out.println("The schedule is currently clear.");
+            return;
+        }
+        System.out.println("\n--- Upcoming Appointments ---");
+        schedule.values().forEach(System.out::println);
+    }
+
+    private void saveAndExit() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATABASE))) {
+            oos.writeObject(schedule);
+            System.out.println("Data saved successfully. Goodbye.");
+        } catch (IOException e) {
+            System.out.println("Warning: Data could not be saved.");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadData() {
+        File file = new File(DATABASE);
+        if (!file.exists()) return;
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            schedule = (Map<LocalDateTime, Appointment>) ois.readObject();
+        } catch (Exception e) {
+            System.out.println("Starting with a fresh calendar.");
+        }
+    }
+}
