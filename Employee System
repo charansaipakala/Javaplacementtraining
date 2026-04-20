@@ -1,0 +1,140 @@
+import java.util.*;
+import java.io.*;
+
+class Employee implements Serializable {
+    private String id;
+    private String name;
+    private String position;
+    private double hourlyRate;
+    private double hoursWorked;
+
+    public Employee(String id, String name, String position, double hourlyRate) {
+        this.id = id;
+        this.name = name;
+        this.position = position;
+        this.hourlyRate = hourlyRate;
+        this.hoursWorked = 0;
+    }
+
+    public double calculateSalary() {
+        return hourlyRate * hoursWorked;
+    }
+
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public void setPosition(String position) { this.position = position; }
+    public void setHourlyRate(double rate) { this.hourlyRate = rate; }
+    public void setHoursWorked(double hours) { this.hoursWorked = hours; }
+
+    @Override
+    public String toString() {
+        return String.format("ID: %-5s | Name: %-15s | Position: %-12s | Salary: $%.2f", 
+                             id, name, position, calculateSalary());
+    }
+}
+
+public class EmployeeManager {
+    private Map<String, Employee> staff = new HashMap<>();
+    private final String DATA_FILE = "employees.dat";
+    private final Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        new EmployeeManager().run();
+    }
+
+    public void run() {
+        loadData();
+        
+        while (true) {
+            System.out.println("\n--- Employee Management ---");
+            System.out.println("1. Add Employee\n2. Update Hours\n3. Delete Employee\n4. Search\n5. List All\n6. Save & Exit");
+            System.out.print("Selection: ");
+            
+            String choice = scanner.nextLine();
+            switch (choice) {
+                case "1" -> addEmployee();
+                case "2" -> updateEmployee();
+                case "3" -> deleteEmployee();
+                case "4" -> searchEmployee();
+                case "5" -> listAll();
+                case "6" -> { saveAndExit(); return; }
+                default -> System.out.println("Invalid input.");
+            }
+        }
+    }
+
+    private void addEmployee() {
+        System.out.print("ID: ");
+        String id = scanner.nextLine();
+        if (staff.containsKey(id)) {
+            System.out.println("ID already exists.");
+            return;
+        }
+        System.out.print("Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Position: ");
+        String pos = scanner.nextLine();
+        System.out.print("Hourly Rate: ");
+        double rate = Double.parseDouble(scanner.nextLine());
+
+        staff.put(id, new Employee(id, name, pos, rate));
+        System.out.println("Added.");
+    }
+
+    private void updateEmployee() {
+        System.out.print("Enter ID: ");
+        String id = scanner.nextLine();
+        if (!staff.containsKey(id)) {
+            System.out.println("Not found.");
+            return;
+        }
+        System.out.print("Hours Worked: ");
+        staff.get(id).setHoursWorked(Double.parseDouble(scanner.nextLine()));
+        System.out.println("Updated.");
+    }
+
+    private void deleteEmployee() {
+        System.out.print("Enter ID: ");
+        if (staff.remove(scanner.nextLine()) != null) {
+            System.out.println("Removed.");
+        } else {
+            System.out.println("Not found.");
+        }
+    }
+
+    private void searchEmployee() {
+        System.out.print("Query: ");
+        String query = scanner.nextLine().toLowerCase();
+        staff.values().stream()
+            .filter(e -> e.getName().toLowerCase().contains(query) || e.getId().equals(query))
+            .forEach(System.out::println);
+    }
+
+    private void listAll() {
+        if (staff.isEmpty()) {
+            System.out.println("Database empty.");
+        } else {
+            staff.values().forEach(System.out::println);
+        }
+    }
+
+    private void saveAndExit() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
+            oos.writeObject(staff);
+            System.out.println("Data saved.");
+        } catch (IOException e) {
+            System.out.println("Save failed.");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadData() {
+        File file = new File(DATA_FILE);
+        if (!file.exists()) return;
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            staff = (Map<String, Employee>) ois.readObject();
+        } catch (Exception e) {
+            System.out.println("Starting fresh.");
+        }
+    }
+}
