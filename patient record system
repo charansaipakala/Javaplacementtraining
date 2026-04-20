@@ -1,0 +1,138 @@
+import java.util.*;
+import java.io.*;
+
+class Patient implements Serializable {
+    private String id;
+    private String name;
+    private int age;
+    private List<String> medicalHistory;
+
+    public Patient(String id, String name, int age) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.medicalHistory = new ArrayList<>();
+    }
+
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public List<String> getHistory() { return medicalHistory; }
+
+    public void addRecord(String record) {
+        this.medicalHistory.add(record);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ID: %-8s | Name: %-15s | Age: %-3d | Records: %d", 
+                             id, name, age, medicalHistory.size());
+    }
+}
+
+public class PatientManager {
+    private List<Patient> patients = new ArrayList<>();
+    private final String DATABASE_FILE = "patients.dat";
+    private final Scanner input = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        new PatientManager().run();
+    }
+
+    public void run() {
+        loadData();
+        System.out.println("Healthcare Management System Online");
+
+        while (true) {
+            System.out.println("\n1. Add Patient | 2. Search | 3. Update Record | 4. Delete | 5. View All | 6. Exit");
+            System.out.print("Action: ");
+            String choice = input.nextLine();
+
+            switch (choice) {
+                case "1" -> addPatient();
+                case "2" -> searchPatient();
+                case "3" -> updateMedicalHistory();
+                case "4" -> deletePatient();
+                case "5" -> displayAll();
+                case "6" -> { saveData(); return; }
+                default -> System.out.println("Invalid selection.");
+            }
+        }
+    }
+
+    private void addPatient() {
+        System.out.print("Enter Patient ID: ");
+        String id = input.nextLine();
+        System.out.print("Name: ");
+        String name = input.nextLine();
+        System.out.print("Age: ");
+        int age = Integer.parseInt(input.nextLine());
+
+        patients.add(new Patient(id, name, age));
+        System.out.println("Patient profile created.");
+    }
+
+    private void searchPatient() {
+        System.out.print("Search by ID or Name: ");
+        String query = input.nextLine().toLowerCase();
+
+        patients.stream()
+            .filter(p -> p.getId().equalsIgnoreCase(query) || p.getName().toLowerCase().contains(query))
+            .forEach(p -> {
+                System.out.println(p);
+                System.out.println("Full History: " + p.getHistory());
+            });
+    }
+
+    private void updateMedicalHistory() {
+        System.out.print("Enter Patient ID to update: ");
+        String id = input.nextLine();
+        
+        for (Patient p : patients) {
+            if (p.getId().equalsIgnoreCase(id)) {
+                System.out.print("Enter new medical note: ");
+                p.addRecord(input.nextLine());
+                System.out.println("History updated.");
+                return;
+            }
+        }
+        System.out.println("Patient not found.");
+    }
+
+    private void deletePatient() {
+        System.out.print("Enter Patient ID to remove: ");
+        String id = input.nextLine();
+        if (patients.removeIf(p -> p.getId().equalsIgnoreCase(id))) {
+            System.out.println("Patient record deleted.");
+        } else {
+            System.out.println("ID not found.");
+        }
+    }
+
+    private void displayAll() {
+        if (patients.isEmpty()) {
+            System.out.println("No records in database.");
+        } else {
+            patients.forEach(System.out::println);
+        }
+    }
+
+    private void saveData() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATABASE_FILE))) {
+            oos.writeObject(patients);
+            System.out.println("System data secured. Goodbye.");
+        } catch (IOException e) {
+            System.out.println("Error saving system data.");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadData() {
+        File file = new File(DATABASE_FILE);
+        if (!file.exists()) return;
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            patients = (List<Patient>) ois.readObject();
+        } catch (Exception e) {
+            System.out.println("Starting fresh database.");
+        }
+    }
+}
